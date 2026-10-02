@@ -42,7 +42,7 @@ var (
 	procGdipCreatePath              = modGdiplus.NewProc("GdipCreatePath")
 	procGdipDeletePath              = modGdiplus.NewProc("GdipDeletePath")
 	procGdipAddPathArcI             = modGdiplus.NewProc("GdipAddPathArcI")
-	procGdipCloseFigure             = modGdiplus.NewProc("GdipCloseFigure")
+	procGdipCloseFigure             = modGdiplus.NewProc("GdipClosePathFigure")
 	procGdipFillPath                = modGdiplus.NewProc("GdipFillPath")
 	procGdipDrawPath                = modGdiplus.NewProc("GdipDrawPath")
 	procGdipCreateFontFamilyFromName = modGdiplus.NewProc("GdipCreateFontFamilyFromName")
@@ -84,7 +84,6 @@ type gpBitmapData struct {
 	Reserved   uint32
 }
 
-type gpPointF struct{ X, Y float32 }
 type gpRectF struct{ X, Y, Width, Height float32 }
 type gpRectI struct{ X, Y, Width, Height int32 }
 
@@ -316,11 +315,10 @@ func gpCreateFont(sizePx float32) (uintptr, uintptr) {
 // gpMeasureText measures a NUL-terminated UTF-16 string.
 func gpMeasureText(g, font uintptr, s *uint16, maxW, maxH float64) (float64, float64) {
 	layout := gpRectF{0, 0, float32(maxW), float32(maxH)}
-	origin := gpPointF{0, 0}
 	box := gpRectF{0, 0, 0, 0}
 	procGdipMeasureString.Call(g, uintptr(unsafe.Pointer(s)), ^uintptr(0), font,
 		uintptr(unsafe.Pointer(&layout)), 0,
-		uintptr(unsafe.Pointer(&origin)), uintptr(unsafe.Pointer(&box)))
+		uintptr(unsafe.Pointer(&box)), 0, 0)
 	if box.Width < 0 {
 		box.Width = 0
 	}

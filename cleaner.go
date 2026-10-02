@@ -40,10 +40,10 @@ const (
 
 // SYSTEM_INFORMATION_CLASS values used by memreduct
 const (
-	sysMemoryListInformation        = 80  // 0x50
-	sysFileCacheInformationEx       = 81  // 0x51
-	sysRegistryReconciliationInfo   = 155 // 0x9B
-	sysCombinePhysicalMemoryInfo    = 299 // 0x12B
+	sysMemoryListInformation       = 80  // 0x50
+	sysFileCacheInformation        = 28  // classic class; the "Ex" (81) is rejected on Win11 26200+
+	sysRegistryReconciliationInfo  = 155 // 0x9B
+	sysCombinePhysicalMemoryInfo   = 229 // SystemMemoryCombineInformation
 )
 
 // SYSTEM_MEMORY_LIST_COMMAND values
@@ -85,11 +85,13 @@ func cleanMemory(mask uint32) cleanResult {
 		memList(memEmptyWorkingSets)
 	}
 
-	// System file cache
+	// System file cache — classic SystemFileCacheInformation class with a
+	// 16-byte { MinimumWorkingSet, MaximumWorkingSet } pair of SIZE_MAX,
+	// which flushes the file cache (the Ex class is not accepted on
+	// Windows 11 26200+; verified empirically)
 	if mask&maskSystemFileCache != 0 {
-		// SYSTEM_FILECACHE_INFORMATION { Min = SIZE_MAX, Max = SIZE_MAX, Flags = 0 }
-		info := [3]uintptr{^uintptr(0), ^uintptr(0), 0}
-		if st := ntSetSystemInformation(sysFileCacheInformationEx,
+		info := [2]uintptr{^uintptr(0), ^uintptr(0)}
+		if st := ntSetSystemInformation(sysFileCacheInformation,
 			unsafe.Pointer(&info[0]), unsafe.Sizeof(info)); st != 0 {
 			errs++
 		}
@@ -122,14 +124,14 @@ func cleanMemory(mask uint32) cleanResult {
 		}
 	}
 
-	// Combine memory lists (win10+)
+	// Combine memory lists (win8.1+) — best-effort: modern Windows 11 builds
+	// reject this operation with STATUS_INVALID_HANDLE regardless of
+	// parameters (verified empirically; memreduct only logs the error), so
+	// failures here must not count toward the user-visible error state.
 	if mask&maskCombineMemoryLists != 0 {
-		// MEMORY_COMBINE_INFORMATION_EX (zeroed, 32 bytes on x64)
-		var combineInfo [4]uintptr
-		if st := ntSetSystemInformation(sysCombinePhysicalMemoryInfo,
-			unsafe.Pointer(&combineInfo[0]), unsafe.Sizeof(combineInfo)); st != 0 {
-			errs++
-		}
+		var combineInfo [4]uintptr // MEMORY_COMBINE_INFORMATION_EX (zeroed)
+		ntSetSystemInformation(sysCombinePhysicalMemoryInfo,
+			unsafe.Pointer(&combineInfo[0]), unsafe.Sizeof(combineInfo))
 	}
 
 	// difference (after) — same accounting as memreduct: usage delta

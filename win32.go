@@ -177,15 +177,15 @@ type LUID struct {
 	HighPart int32
 }
 
+// C layout on x64: LUID is {DWORD, LONG} (align 4), so LUID_AND_ATTRIBUTES is
+// 12 bytes and TOKEN_PRIVILEGES places Privileges at offset 4 — NOT 8.
 type LUID_AND_ATTRIBUTES struct {
 	Luid       LUID
 	Attributes uint32
-	_          uint32 // struct padding (C: 4+4+pad)
 }
 
 type TOKEN_PRIVILEGES struct {
 	PrivilegeCount uint32
-	_              uint32 // keep Privileges aligned to 8 on x64
 	Privileges     [1]LUID_AND_ATTRIBUTES
 }
 
@@ -348,8 +348,14 @@ func enablePrivilege(name string) bool {
 	if r == 0 {
 		return false
 	}
-	r, _, _ = procAdjustTokenPrivileges.Call(token, 0, uintptr(unsafe.Pointer(&tp)), 0, 0, 0)
-	return r != 0
+	r, _, callErr := procAdjustTokenPrivileges.Call(token, 0, uintptr(unsafe.Pointer(&tp)), 0, 0, 0)
+	if r == 0 {
+		return false // AdjustTokenPrivileges itself failed
+	}
+	if errno, ok := callErr.(syscall.Errno); ok && errno != 0 {
+		return false // e.g. ERROR_NOT_ALL_ASSIGNED (1300): privilege not held by token
+	}
+	return true
 }
 
 // memoryInfo returns (loadPercent, availPhysBytes, totalPhysBytes).

@@ -192,12 +192,22 @@ func (a *App) drawBubble(g uintptr) {
 	if tw <= 0 || th <= 0 {
 		return
 	}
-	const padX = 17.0
-	const padY = 10.0
-	bw := tw + padX*2
-	bh := th + padY*2
-	if bh < 30 {
-		bh = 30
+
+	// ellipse geometry: the text rectangle must inscribe the ellipse
+	bh := th + 20
+	if bh < 34 {
+		bh = 34
+	}
+	bw := tw + 36
+	// widen so the text corners stay comfortably inside:
+	// (tw/bw)^2 + (th/bh)^2 <= 0.75
+	if q := th / bh; q*q < 0.75 {
+		if minW := tw / math.Sqrt(0.75-q*q); minW > bw {
+			bw = minW
+		}
+	}
+	if m := float64(winW) - 8; bw > m {
+		bw = m // keep inside the window even for extreme text
 	}
 	x := (float64(winW) - bw) / 2
 	y := bubbleTop
@@ -209,11 +219,11 @@ func (a *App) drawBubble(g uintptr) {
 	gpDeleteBrush(tail)
 
 	fill := gpCreateBrush(colBubbleFill)
-	gpFillRoundedRect(g, fill, x, y, bw, bh, 14)
+	gpFillEllipse(g, fill, x, y, bw, bh)
 	gpDeleteBrush(fill)
 
 	pen := gpCreatePen(colBubbleBorder, 1.2)
-	gpDrawRoundedRect(g, pen, x, y, bw, bh, 14)
+	gpDrawEllipse(g, pen, x, y, bw, bh)
 	gpDeletePen(pen)
 
 	brush := gpCreateBrush(accent)

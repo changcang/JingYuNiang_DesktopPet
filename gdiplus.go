@@ -35,6 +35,7 @@ var (
 	procGdipCreateSolidFill         = modGdiplus.NewProc("GdipCreateSolidFill")
 	procGdipDeleteBrush             = modGdiplus.NewProc("GdipDeleteBrush")
 	procGdipFillEllipseI            = modGdiplus.NewProc("GdipFillEllipseI")
+	procGdipDrawEllipseI            = modGdiplus.NewProc("GdipDrawEllipseI")
 	procGdipFillRectangleI          = modGdiplus.NewProc("GdipFillRectangleI")
 	procGdipCreatePen1              = modGdiplus.NewProc("GdipCreatePen1")
 	procGdipDeletePen               = modGdiplus.NewProc("GdipDeletePen")
@@ -227,6 +228,10 @@ func gpDeleteBrush(b uintptr) { procGdipDeleteBrush.Call(b) }
 
 func gpFillEllipse(g, brush uintptr, x, y, w, h float64) {
 	procGdipFillEllipseI.Call(g, brush, i32(x), i32(y), i32(w), i32(h))
+}
+
+func gpDrawEllipse(g, pen uintptr, x, y, w, h float64) {
+	procGdipDrawEllipseI.Call(g, pen, i32(x), i32(y), i32(w), i32(h))
 }
 
 func gpFillRect(g, brush uintptr, x, y, w, h float64) {

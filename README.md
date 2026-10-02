@@ -8,6 +8,7 @@
 |---|---|
 | 🐋 透明置顶桌宠 | 无边框、背景完全透明的鲸鱼娘，漂浮 + 呼吸 + 摇摆动画 |
 | 💬 气泡对话 | 头顶气泡实时显示内存占用（绿/黄/红三色），还会随机聊天 |
+| 🖋 霞鹜文楷 | 内嵌 [LxgwWenKai](https://github.com/lxgw/LxgwWenKai) 开源字体（SIL OFL 1.1），气泡文字更可爱 |
 | 🧹 一键清理 | **左键点击宠物**立即清理内存，显示释放了多少 |
 | ✨ 清理动画 | 清理时摇晃 + 蓝色星光粒子 + 转圈点点，完成后雀跃 + 金色星星 |
 | ⏱ 自动清理 | 内存使用率达到阈值（70%/80%/90%）自动清理，带 30 秒冷却 |
@@ -60,16 +61,23 @@ go build -ldflags "-s -w -H windowsgui" -o WhalePet.exe .
 
 ```
 DesktopPet/
-├── DSniang1.png        # 桌宠形象（构建时嵌入 exe）
+├── DSniang1.png            # 桌宠形象（构建时嵌入 exe）
+├── LXGWWenKai-Regular.ttf  # 霞鹜文楷字体（构建时嵌入 exe）
 ├── go.mod
-├── main.go             # 入口：单实例、UAC 提权、GDI+ 初始化
-├── win32.go            # Win32 API 声明（类型 / 常量 / 过程）
-├── gdiplus.go          # GDI+ 绑定（PNG 解码 / 绘制 / 文本 / 变换）
-├── cleaner.go          # 内存清理引擎（memreduct 移植）
-├── app.go              # 桌宠窗口、托盘、菜单、消息循环
-├── render.go           # 动画与渲染（粒子、气泡）
-└── config.go           # 配置持久化
+├── main.go                 # 入口：单实例、UAC 提权、GDI+ 初始化
+├── win32.go                # Win32 API 声明（类型 / 常量 / 过程）
+├── gdiplus.go              # GDI+ 绑定（PNG 解码 / 绘制 / 文本 / 变换）
+├── font.go                 # 内嵌霞鹜文楷字体加载（私有字体集合）
+├── cleaner.go              # 内存清理引擎（memreduct 移植）
+├── app.go                  # 桌宠窗口、托盘、菜单、消息循环
+├── render.go               # 动画与渲染（粒子、气泡）
+└── config.go               # 配置持久化
 ```
+
+## 📜 开源许可
+
+- 本项目：[GPL-3.0](LICENSE)（清理引擎移植自 [mem reduct](https://github.com/henrypp/memreduct)）
+- 气泡字体：[霞鹜文楷 LxgwWenKai](https://github.com/lxgw/LxgwWenKai)，SIL Open Font License 1.1
 
 ## ❓ 常见问题
 

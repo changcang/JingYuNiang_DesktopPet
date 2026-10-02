@@ -70,9 +70,10 @@ type App struct {
 	petDW, petDH     int32 // pet draw size
 	petX, petY       int32 // pet draw origin
 
-	gpToken    uintptr
-	font       uintptr
-	fontFamily uintptr
+	gpToken        uintptr
+	font           uintptr
+	fontFamily     uintptr
+	fontCollection uintptr // private GDI+ font collection (embedded 霞鹜文楷)
 
 	state       int
 	stateChanged time.Time
@@ -244,7 +245,11 @@ func (a *App) run() error {
 	a.petX = (winW - a.petDW) / 2
 	a.petY = winH - petBottomMargin - a.petDH
 
-	a.font, a.fontFamily = gpCreateFont(15)
+	// --- font (embedded 霞鹜文楷, fallback to system fonts) --------------------
+	a.font, a.fontFamily, a.fontCollection = gpCreateFontFromMemory(wenKaiTTF, 15)
+	if a.font == 0 {
+		a.font, a.fontFamily = gpCreateFont(15)
+	}
 	if a.font == 0 {
 		return errors.New("font creation failed")
 	}
@@ -303,6 +308,10 @@ func (a *App) cleanup() {
 	if a.fontFamily != 0 {
 		procGdipDeleteFontFamily.Call(a.fontFamily)
 		a.fontFamily = 0
+	}
+	if a.fontCollection != 0 {
+		procGdipDeletePrivateFontCollection.Call(uintptr(unsafe.Pointer(&a.fontCollection)))
+		a.fontCollection = 0
 	}
 	if a.dib != 0 {
 		procDeleteObject.Call(a.dib)
